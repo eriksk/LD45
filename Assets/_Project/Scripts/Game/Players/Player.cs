@@ -34,12 +34,16 @@ namespace Skoggy.LD45.Game.Players
             if(consumable == null) return;
 
             // Maybe make shit stuck in the blob?
-            var weight = consumable.Consume();
-            AddWeight(weight);
+            if(consumable.CanConsume(_weight))
+            {
+                AddWeight(consumable.Consume());
+                consumable.Attach(Collider.transform, _weight);
+            }
         }
 
         private void AddWeight(float weight)
         {
+            // Make growth not be linear
             _weight += weight;
         }
         
