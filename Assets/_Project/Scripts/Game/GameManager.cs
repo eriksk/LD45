@@ -6,6 +6,7 @@ using System.Linq;
 using Skoggy.LD45.Game.Carts;
 using Skoggy.LD45.Game.Players;
 using Skoggy.LD45.Game.Products;
+using Skoggy.LD45.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -22,14 +23,25 @@ namespace Skoggy.LD45.Game
         public Transform BasketSpawnPosition;
         public Text TextBudget;
         public Text TextTimer;
+        public UIGameOverScreen GameOverScreen;
         private float _startTime;
         private int _maxTimeForTip;
         private bool _stateWorking;
+        private float _timeLeft;
+        private bool _gameOver;
+        private bool _started;
 
         void Start()
         {
             TextTimer.text = "00:00";
             ShoppingList = new List<ShoppingItem>();
+            _started = false;
+        }
+
+        public void StartGame()
+        {
+            _started = true;
+            _timeLeft = (float)TimeSpan.FromMinutes(2).TotalSeconds;
             StartCoroutine(BeginNextCustomer());
             UpdateBudget();
         }
@@ -45,13 +57,17 @@ namespace Skoggy.LD45.Game
 
         void Update()
         {
-            if(!_stateWorking)
+            if(!_started) return;
+            if(_gameOver) return;
+            _timeLeft -= Time.deltaTime;
+
+            if(_timeLeft <= 0f)
             {
-                TextTimer.text = string.Empty;
-                return;    
+                GameOver();
+                return;
             }
 
-            TextTimer.text = $"Time Bonus: {RemainingTimeForBonus}";
+            TextTimer.text = $"Time Left: {(int)_timeLeft}";
         }
 
         public void Restock()
@@ -77,7 +93,7 @@ namespace Skoggy.LD45.Game
 
             Budget += totalSales;
 
-            var timeBonus = RemainingTimeForBonus;
+            var timeBonus = RemainingTimeForBonus > 0 ? RemainingTimeForBonus : 0;
 
             if(perfectBasket && timeBonus > 0)
             {
@@ -92,18 +108,14 @@ namespace Skoggy.LD45.Game
 
             ObjectLocator.Checkout.Show(totalSales - unchargeable, perfectBasket ? timeBonus : 0, totalSales / 2);
 
-            if(Budget < 0)
-            {
-                GameOver();
-                return;
-            }
-
             StartCoroutine(BeginNextCustomer());
         }
 
         private void GameOver()
         {
-            Debug.Log("TODO: GAME OVER!");
+            _gameOver = true;
+            GameOverScreen.gameObject.SetActive(true);
+            GameOverScreen.Initialize(Budget);
         }
 
         private IEnumerator BeginNextCustomer()

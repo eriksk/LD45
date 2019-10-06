@@ -16,21 +16,31 @@ namespace Skoggy.LD45.UI
         public GameObject ListItemPrefab;
         public Color Neutral, Good, Bad, Started;
 
+        private bool _dirty;
+
         void Update()
         {
             if(Player == null) 
             {
+                _dirty = true;
                 RenderRoot.SetActive(false);
                 return;
             }
 
             if(!Player.CarryingBasked)
             {
+                _dirty = true;
                 RenderRoot.SetActive(false);
                 return;
             }
             
             RenderRoot.SetActive(true);
+            if(!_dirty)
+            {
+                return;
+            }
+            
+            _dirty = false;
 
             var productsInBasket = Player.Basket.Products;
 
