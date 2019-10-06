@@ -1,5 +1,5 @@
 
-using Skoggy.LD45.Game.Players;
+using Skoggy.LD45.Game.Carts;
 using UnityEngine;
 
 namespace Skoggy.LD45.Game.DropOff
@@ -9,6 +9,18 @@ namespace Skoggy.LD45.Game.DropOff
         public Material Green, Red, Blue;
         public MeshRenderer Renderer;
 
+        private float _timeout;
+
+        void Update()
+        {
+            _timeout -= Time.deltaTime;
+
+            if(_timeout <= 0f)
+            {
+                Renderer.sharedMaterial = Blue;
+            }
+        }
+
         public void OnTriggerEnter(Collider collider)
         {
             OnTriggerStay(collider);
@@ -16,17 +28,12 @@ namespace Skoggy.LD45.Game.DropOff
 
         public void OnTriggerStay(Collider collider)
         {
-            var player = collider.gameObject.GetComponent<Player>();
-            if(player == null) return;
+            var basket = collider.gameObject.GetComponent<ShoppingBasket>();
+            if(basket == null) return;
 
-            if(!player.CarryingBasked)
-            {
-                Renderer.sharedMaterial = Red;
-                return;
-            }
+            _timeout = 0.3f;
 
-            // TODO: 
-            var basketMatchesShoppingList = false;
+            var basketMatchesShoppingList = ObjectLocator.GameManager.EverythingOnShoppingListIsInBasket(basket);
             if(!basketMatchesShoppingList)
             {
                 Renderer.sharedMaterial = Red;
@@ -34,13 +41,12 @@ namespace Skoggy.LD45.Game.DropOff
             }
 
             Renderer.sharedMaterial = Green;
-            // TODO: Consume basket and move on ??
         }
 
         public void OnTriggerExit(Collider collider)
         {
-            var player = collider.gameObject.GetComponent<Player>();
-            if(player == null) return;
+            var basket = collider.gameObject.GetComponent<ShoppingBasket>();
+            if(basket == null) return;
             
             Renderer.sharedMaterial = Blue;
         }

@@ -32,6 +32,8 @@ namespace Skoggy.LD45.Game.Players
         public bool CarryingAnything => _basket != null || _product != null;
         public bool CarryingProduct => _product != null;
         public bool CarryingBasked => _basket != null;
+
+        public ShoppingBasket Basket => _basket;
         public Product Product => _product;
 
         void Update()

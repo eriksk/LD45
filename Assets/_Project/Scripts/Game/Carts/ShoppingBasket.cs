@@ -13,6 +13,8 @@ namespace Skoggy.LD45.Game.Carts
         public Vector3 Position => transform.position;
         private List<Product> _products = new List<Product>();
 
+        public List<Product> Products => _products;
+
         void Start()
         {
             Rigidbody.centerOfMass = CenterOfMass.localPosition;

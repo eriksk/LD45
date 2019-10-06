@@ -123,5 +123,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 52b369b46ff979b4baa65dacf33ee943, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Name: Apples (Green)
+  Name: Apples
   Price: 10
+  InBasket: 0
