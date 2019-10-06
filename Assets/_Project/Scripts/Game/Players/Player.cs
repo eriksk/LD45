@@ -9,7 +9,7 @@ namespace Skoggy.LD45.Game.Players
 {
     public class Player : MonoBehaviour
     {
-        public Animation Animation;
+        public Animator Animator;
         public Rigidbody Rigidbody;
         public bool IsPlayer = false;
 
@@ -19,6 +19,7 @@ namespace Skoggy.LD45.Game.Players
         public float RotationSpeed = 10f;
 
         public Transform PickupPoint;
+        public Transform GrabHandle;
 
         private Vector3 _movement;
         private ShoppingBasket _basket;
@@ -29,6 +30,9 @@ namespace Skoggy.LD45.Game.Players
         }
         
         public bool CarryingAnything => _basket != null || _product != null;
+        public bool CarryingProduct => _product != null;
+        public bool CarryingBasked => _basket != null;
+        public Product Product => _product;
 
         void Update()
         {
@@ -67,6 +71,8 @@ namespace Skoggy.LD45.Game.Players
             {
                 HandleAction();
             }
+
+            Animator.SetBool("walking", _movement.magnitude > 0.25f);
         }
 
         private void HandleAction()
@@ -82,22 +88,49 @@ namespace Skoggy.LD45.Game.Players
                 }
                 if(_product != null)
                 {
+                    var basket = GetBasketIfNear();
+
                     _product.Release();
                     _product.transform.SetParent(null);
+
+                    if(basket != null)
+                    {
+                        if(basket.AddToBasket(_product))
+                        {
+                            // TODO: Effects and stuff, and check shopping list
+                        }
+                    }
+
                     _product = null;
                 }
+                
+                Animator.SetBool("grabbed", false);
             }
             else
             {
-                TryPickup();
+                var pickedUpAnything = TryPickup();
+                if(pickedUpAnything)
+                {
+                    Animator.SetBool("grabbed", true);
+                }
             }
         }
 
-        private void TryPickup()
+        private ShoppingBasket GetBasketIfNear()
         {
-            if(CarryingAnything) return;
+            var carts = GameObject.FindObjectsOfType<ShoppingBasket>();
+            
+            return carts
+                .Where(x => Vector3.Distance(x.Position, PickupPoint.position) < 1.5f)
+                .OrderBy(x => Vector3.Distance(x.Position, PickupPoint.position))
+                .FirstOrDefault();
+        }
 
-            var products = GameObject.FindObjectsOfType<Product>();
+        private bool TryPickup()
+        {
+            if(CarryingAnything) return false;
+
+            var products = GameObject.FindObjectsOfType<Product>().Where(x => !x.InBasket);
             var carts = GameObject.FindObjectsOfType<ShoppingBasket>();
 
             var items = new List<IPickupable>();
@@ -109,29 +142,31 @@ namespace Skoggy.LD45.Game.Players
                 .OrderBy(x => Vector3.Distance(x.Position, PickupPoint.position))
                 .FirstOrDefault();
 
-            if(nearestItem == null) return;
+            if(nearestItem == null) return false;
 
             if(nearestItem is Product)
             {
                 _product = nearestItem as Product;
-                _product.transform.SetParent(transform);
-                _product.transform.localPosition = new Vector3(0f, 0.27f, 0.6f);
-                _product.transform.localRotation = Quaternion.Euler(0f, -90f, 15f);
+                _product.transform.SetParent(GrabHandle);
+                _product.transform.localPosition = Vector3.zero;
+                // _product.transform.localRotation = Quaternion.Euler(0f, -90f, 15f);
                 _product.transform.localScale = Vector3.one;
                 _product.Grab();
-                return;
+                return true;
             }
 
             if(nearestItem is ShoppingBasket)
             {
                 _basket = nearestItem as ShoppingBasket;
-                _basket.transform.SetParent(transform);
-                _basket.transform.localPosition = new Vector3(0f, 0.27f, 0.6f);
-                _basket.transform.localRotation = Quaternion.Euler(0f, -90f, 15f);
+                _basket.transform.SetParent(GrabHandle);
+                _basket.transform.localPosition = Vector3.zero;
+                _basket.transform.localRotation = Quaternion.Euler(90f, -90f, 0f);
                 _basket.transform.localScale = Vector3.one;
                 _basket.Grab();
-                return;
+                return true;
             }
+
+            return false;
         }
 
         void FixedUpdate()
@@ -143,6 +178,10 @@ namespace Skoggy.LD45.Game.Players
             flatVelocity.y = 0f;
 
             rigidbody.AddForce(-flatVelocity * Damping * Time.fixedDeltaTime);
+
+            var position = transform.position;
+            position.y = 0f; // lulz
+            transform.position = position;
         }
     }
 }

@@ -1,4 +1,5 @@
 
+using System;
 using UnityEngine;
 
 namespace Skoggy.LD45.Game.Products
@@ -10,8 +11,9 @@ namespace Skoggy.LD45.Game.Products
         
         private Rigidbody _rigidbody;
         private Collider _collider;
-        
+
         public Vector3 Position => transform.position;
+        public bool InBasket = false;
 
         void Start()
         {
@@ -21,12 +23,22 @@ namespace Skoggy.LD45.Game.Products
         
         public void Grab()
         {
+            if(InBasket) return;
             Destroy(_rigidbody);
             _collider.enabled = false;
         }
-        
+
+        public void DisableUsage(Transform newParent)
+        {
+            transform.SetParent(newParent);
+            transform.localPosition = Vector3.zero;
+            Destroy(_rigidbody);
+            Destroy(_collider);
+        }
+
         public void Release()
         {
+            if(InBasket) return;
             _rigidbody = gameObject.AddComponent<Rigidbody>();
             _rigidbody.velocity = Vector3.zero;
             _rigidbody.angularVelocity = Vector3.zero;
