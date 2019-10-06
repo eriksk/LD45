@@ -29,7 +29,7 @@ namespace Skoggy.LD45.Game.Carts
 
             product.DisableUsage(transform);
             product.InBasket = true;
-            product.transform.localPosition = Vector3.up * (0.2f + (_products.Count * 0.15f));
+            product.transform.localPosition = Vector3.up * (0.4f + (_products.Count * 0.15f));
             _products.Add(product);
             return true;
         }

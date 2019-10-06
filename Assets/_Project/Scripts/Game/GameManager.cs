@@ -120,8 +120,7 @@ namespace Skoggy.LD45.Game
 
         private IEnumerator BeginNextCustomer()
         {
-            yield return new WaitForSeconds(2);
-            
+            yield return new WaitForSeconds(0.1f);
             Instantiate(BasketPrefab, BasketSpawnPosition.position, BasketSpawnPosition.rotation);
             CreateNewShoppingList();
 
@@ -195,7 +194,7 @@ namespace Skoggy.LD45.Game
 
             var notUsedProducts = AvailableProducts.ToArray().ToList();
 
-            var items = UnityEngine.Random.Range(2, 5);
+            var items = UnityEngine.Random.Range(2, 10);
 
             for(var i = 0; i < items; i++)
             {
