@@ -20,6 +20,9 @@ namespace Skoggy.LD45.Game.Players
 
         public Transform PickupPoint;
         public Transform GrabHandle;
+        public AudioSource Footsteps;
+        public AudioSource OneShotSource;
+        public AudioClip PickUpClip, DropClip, AddToBasketClip;
 
         private Vector3 _movement;
         private ShoppingBasket _basket;
@@ -27,6 +30,8 @@ namespace Skoggy.LD45.Game.Players
 
         void Start()
         {
+            Footsteps.Play();
+            Footsteps.Pause();
         }
         
         public bool CarryingAnything => _basket != null || _product != null;
@@ -67,6 +72,12 @@ namespace Skoggy.LD45.Game.Players
                     Quaternion.LookRotation(_movement.normalized, Vector3.up),
                     RotationSpeed * Time.deltaTime
                 ));
+                ObjectLocator.Smoke?.WalkSmoke(transform.position, transform.forward, Rigidbody.velocity);
+                Footsteps.UnPause();
+            }
+            else
+            {
+                Footsteps.Pause();
             }
 
             if(Input.GetButtonDown("Jump"))
@@ -82,6 +93,7 @@ namespace Skoggy.LD45.Game.Players
 
             if(CarryingAnything)
             {
+                OneShotSource.PlayOneShot(DropClip);
                 if(_basket != null)
                 {
                     _basket.Release();
@@ -99,7 +111,9 @@ namespace Skoggy.LD45.Game.Players
                     {
                         if(basket.AddToBasket(_product))
                         {
-                            // TODO: Effects and stuff, and check shopping list
+                            // TODO: Effects and stuff
+                            ObjectLocator.Smoke?.AddToBasket(basket.transform.position);
+                            OneShotSource.PlayOneShot(AddToBasketClip);
                         }
                     }
 
@@ -114,6 +128,7 @@ namespace Skoggy.LD45.Game.Players
                 if(pickedUpAnything)
                 {
                     Animator.SetBool("grabbed", true);
+                    OneShotSource.PlayOneShot(PickUpClip);
                 }
             }
         }

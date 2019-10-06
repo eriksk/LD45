@@ -785,7 +785,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: overclerked
+  m_Text: OverClerked
 --- !u!222 &810204510
 CanvasRenderer:
   m_ObjectHideFlags: 0

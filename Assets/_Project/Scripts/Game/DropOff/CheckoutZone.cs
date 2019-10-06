@@ -10,6 +10,7 @@ namespace Skoggy.LD45.Game.DropOff
         public Material Green, Red, Blue;
         public MeshRenderer Renderer;
         public DropOffZone DropOffZone;
+        public AudioSource CheckoutSource;
         private bool _inside;
 
         void Update()
@@ -18,6 +19,7 @@ namespace Skoggy.LD45.Game.DropOff
 
             if(DropOffZone.ContainsBasket() && Input.GetButtonDown("Jump"))
             {
+                CheckoutSource.Play();
                 ObjectLocator.GameManager.Checkout(DropOffZone.Basket);
             }
         }
