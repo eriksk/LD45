@@ -1,5 +1,6 @@
 
 using Skoggy.LD45.Game;
+using Skoggy.LD45.UI;
 using UnityEngine;
 
 namespace Skoggy.LD45
@@ -8,15 +9,18 @@ namespace Skoggy.LD45
     {
         private static Camera _camera;
         private static GameManager _gameManager;
+        private static UICheckoutResult _checkoutResult;
 
         public static void Clear()
         {
             _camera = null;
             _gameManager = null;
+            _checkoutResult = null;
         }
 
         public static Camera Camera => _camera ?? (_camera = Camera.main);
         public static GameManager GameManager => _gameManager = GetOrFind(_gameManager, "[GameManager]");
+        public static UICheckoutResult Checkout => _checkoutResult = GetOrFind(_checkoutResult, "[CheckoutResult]", "Canvas");
 
         private static T GetOrFind<T>(T existing, string name, string containerName = "") where T : Behaviour
         {

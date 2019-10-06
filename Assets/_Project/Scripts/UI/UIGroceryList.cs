@@ -83,7 +83,6 @@ namespace Skoggy.LD45.UI
             }
 
             RenderList(textsWithColor);
-            // TODO: Add money to this also
         }
 
         private void RenderList(List<TextWithColor> textsWithColor)

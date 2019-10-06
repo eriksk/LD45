@@ -1,11 +1,13 @@
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Skoggy.LD45.Game.Carts;
 using Skoggy.LD45.Game.Players;
 using Skoggy.LD45.Game.Products;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Skoggy.LD45.Game
 {
@@ -18,45 +20,144 @@ namespace Skoggy.LD45.Game
         public Transform DropOffZone;
         public GameObject BasketPrefab;
         public Transform BasketSpawnPosition;
+        public Text TextBudget;
+        public Text TextTimer;
+        private float _startTime;
+        private int _maxTimeForTip;
+        private bool _stateWorking;
 
         void Start()
         {
+            TextTimer.text = "00:00";
             ShoppingList = new List<ShoppingItem>();
-            CreateNewShoppingList();            
+            StartCoroutine(BeginNextCustomer());
+            UpdateBudget();
+        }
+
+        private int RemainingTimeForBonus
+        {
+            get
+            {
+                var progress = (int)(Time.time - _startTime);
+                return _maxTimeForTip - progress;
+            }
+        }
+
+        void Update()
+        {
+            if(!_stateWorking)
+            {
+                TextTimer.text = string.Empty;
+                return;    
+            }
+
+            TextTimer.text = $"Time Bonus: {RemainingTimeForBonus}";
         }
 
         public void Restock()
         {
-            var totalSalesCostOfRestockedItems = 0;
             var containers = GameObject.FindObjectsOfType<ProductContainer>();
             foreach(var container in containers)
             {
-                totalSalesCostOfRestockedItems += container.Restock();
+                container.Restock();
             }
+        }
 
-            Budget -= totalSalesCostOfRestockedItems / 2;
+        private void UpdateBudget()
+        {
+            TextBudget.text = $"Budget: ${Budget}";
         }
 
         public void Checkout(ShoppingBasket basket)
         {
             if(basket == null) return;
+            _stateWorking = false;
 
-            var total = GetSalesTotal(basket);
+            var totalSales = GetSalesTotal(basket, out var unchargeable, out var perfectBasket);
 
-            Budget += total;
+            Budget += totalSales;
+
+            var timeBonus = RemainingTimeForBonus;
+
+            if(perfectBasket && timeBonus > 0)
+            {
+                Budget += timeBonus;
+            }
 
             Destroy(basket.gameObject);
             Restock();
-            Instantiate(BasketPrefab, BasketSpawnPosition.position, BasketSpawnPosition.rotation);
-            CreateNewShoppingList();
+
+            Budget -= unchargeable;
+            UpdateBudget();
+
+            ObjectLocator.Checkout.Show(totalSales - unchargeable, perfectBasket ? timeBonus : 0, totalSales / 2);
+
+            if(Budget < 0)
+            {
+                GameOver();
+                return;
+            }
+
+            StartCoroutine(BeginNextCustomer());
         }
 
-        private int GetSalesTotal(ShoppingBasket basket)
+        private void GameOver()
         {
+            Debug.Log("TODO: GAME OVER!");
+        }
+
+        private IEnumerator BeginNextCustomer()
+        {
+            yield return new WaitForSeconds(2);
+            
+            Instantiate(BasketPrefab, BasketSpawnPosition.position, BasketSpawnPosition.rotation);
+            CreateNewShoppingList();
+
+            yield return null;
+            _stateWorking = true;
+        }
+
+        private int GetSalesTotal(ShoppingBasket basket, out int unchargeable, out bool perfectBasket)
+        {
+            perfectBasket = false;
+            unchargeable = 0;
             if(basket.Products.Count == 0) return 0;
 
-            // TODO: Get prices of all on list only
-            return basket.Products.Sum(x => x.Price);
+            var products = basket.Products.ToLookup(x => x.Name);
+            var total = 0;
+
+            perfectBasket = true;
+
+            var validItems = ShoppingList.Select(x => x.ProductName).ToArray();
+
+            foreach(var item in ShoppingList)
+            {
+                var charged = products[item.ProductName].Count();
+                if(charged > 0)
+                {
+                    int count = Mathf.Min(item.Quantity, charged);
+                    var overflow = charged > item.Quantity ? charged - item.Quantity : 0;
+                    var price = products[item.ProductName].First().Price;
+                    total += count * price;
+                    if(count != item.Quantity)
+                    {
+                        perfectBasket = false;
+                    }
+                    unchargeable += overflow * price;
+                }
+                else
+                {
+                    perfectBasket = false;
+                }
+            }    
+
+            var nonValidItems = products
+                .Where(x => !validItems.Contains(x.Key))
+                .Sum(x => x.Sum(f => f.Price));
+
+            unchargeable += nonValidItems;
+
+            return total;
         }
 
         public bool EverythingOnShoppingListIsInBasket(ShoppingBasket basket)
@@ -98,6 +199,8 @@ namespace Skoggy.LD45.Game
                     Quantity = UnityEngine.Random.Range(1, 3)
                 });
             }
+            _startTime = Time.time;
+            _maxTimeForTip = ShoppingList.Sum(x => x.Quantity) * 5;
         }
     }
 
